@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta namee="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+  <style>
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+  h1{
+    color:  white;
+    font-size: 30px;
+  }
+  h3{
+    color: white;
+    font-size: 25px;
+
+  }
+  h2{
+    color:white;
+    font-size: 20px;
+  }
+  body {
+    background: black;
+    align-items: center;
+    justify-content: center;
+  }
+  canvas {
+    border: 1px solid white;
+  }
+  label{
+    color: white;
+    font-size: 18px;
+  }
+  .scores{
+    float: left;
+    width: 20%;
+    text-align: center;
+
+  }
+  .main{
+      float: left;
+      width: 60%;
+      text-align: center;
+      padding-top: 20px;
+  }
+  .title{
+    color: white;
+    text-align: center;
+    font-size: 50px;
+  }
+  .modechange{
+    float:left;
+    width:20%;
+    text-align: left;
+  }
+  .source{
+    text-align: center;
+    color:gray;
+    margin-top: 80px;
+  }
+  @media only screen and (max-width: 620px) {
+  /* For mobile phones: */
+  .scores, .main , .modechange{
+    width: 100%;
+  }
+  
+}
+  </style>
+</head>
+<body>
+<div class="title">Snake</div>
+<div style="overflow:auto"><div class="scores"><h1> Score: <span id="score"></span></h1>
+<h3> Best score:  <span id="bestscore"></span></h3></div>
+<div class="main"><canvas width="400" height="400" id="game"></canvas></div>
+<div class="modechange">
+  <h1> Gamemode</h1><br>
+  <input type="radio" id="easy" name="gamemode" checked>
+  <label for="easy">Snake wraps around the edges</label><br><br>
+  <input type="radio" name="gamemode" id="hard">
+  <label for="hard" >Edges kill</label>
+</div>
+</div>
+<div class="source">© base game code: https://gist.github.com/straker/ff00b4b49669ad3dec890306d348adc4</div>
+
+
+<script>
+
+var bestscore=0;
+var canvas = document.getElementById('game');
+var context = canvas.getContext('2d');
+var score =0;
+var grid = 16;
+var count = 0;
+  
+var snake = {
+  x: 160,
+  y: 160,
+  
+  // snake velocity. moves one grid length every frame in either the x or y direction
+  dx: grid,
+  dy: 0,
+  
+  // keep track of all grids the snake body occupies
+  cells: [],
+  
+  // length of the snake. grows when eating an apple
+  maxCells: 4
+};
+var apple = {
+  x: 320,
+  y: 320
+};
+var stone ={
+  x: 336,
+  y: 352
+};
+var stoneactive=1;
+var basespeed=15;
+var speed=basespeed;
+// get random whole numbers in a specific range
+// @see https://stackoverflow.com/a/1527820/2124254
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+// game loop
+function loop() {
+  requestAnimationFrame(loop);
+
+  // slow game loop to 15 fps instead of 60 (60/15 = 4)
+  if (++count < 60/speed) {
+    return;
+  }
+
+  count = 0;
+  context.clearRect(0,0,canvas.width,canvas.height);
+
+  // move snake by it's velocity
+  snake.x += snake.dx;
+  snake.y += snake.dy;
+
+  //function to reset values of game
+  function resetgame(){
+      snake.x = 160;
+      snake.y = 160;
+      snake.cells = [];
+      snake.maxCells = 4;
+      snake.dx = grid;
+      snake.dy = 0;
+      if(bestscore  < score){
+        bestscore =score;
+      }
+      basespeed=15;
+      speed=15;
+      score=0;
+      apple.x = getRandomInt(0, 25) * grid;
+      apple.y = getRandomInt(0, 25) * grid;
+      while(apple.x===stone.x){
+        apple.x = getRandomInt(0, 25) * grid;
+      }
+  }
+
+  //Get gamemode
+  var hardmode=document.getElementById("hard");
+
+  // wrap snake position horizontally on edge of screen
+  
+    if (snake.x < 0) {
+      snake.x = canvas.width - grid;
+      if(hardmode.checked===true){resetgame()}
+    }
+    else if (snake.x >= canvas.width) {
+      snake.x = 0;
+      if(hardmode.checked===true){resetgame()}
+    }
+    
+
+    // wrap snake position vertically on edge of screen
+    if (snake.y < 0) {
+      snake.y = canvas.height - grid;
+      if(hardmode.checked===true){resetgame()}
+    }
+    else if (snake.y >= canvas.height) {
+      snake.y = 0;
+      if(hardmode.checked===true){resetgame()}
+    }
+  
+
+  // keep track of where snake has been. front of the array is always the head
+  snake.cells.unshift({x: snake.x, y: snake.y});
+
+  // remove cells as we move away from them
+  if (snake.cells.length > snake.maxCells) {
+    snake.cells.pop();
+  }
+
+  // draw apple
+  context.fillStyle = 'red';
+  context.fillRect(apple.x, apple.y, grid-2, grid-2);
+  // draw stone
+  if(stoneactive>0){
+    context.fillStyle = 'lightblue';
+    context.fillRect(stone.x, stone.y, grid-1, grid-1);
+  }
+ 
+  // draw snake one cell at a time
+  context.fillStyle = 'green';
+  snake.cells.forEach(function(cell, index) {
+    
+    // drawing 1 px smaller than the grid creates a grid effect in the snake body so you can see how long it is
+    context.fillRect(cell.x, cell.y, grid-1, grid-1);  
+
+    // snake ate apple
+    if (cell.x === apple.x && cell.y === apple.y) {
+      snake.maxCells++;
+      if(hardmode.checked===true){
+        score=score+3;
+      }else{
+        score=score+2;
+      }
+
+      // canvas is 400x400 which is 25x25 grids 
+      apple.x = getRandomInt(0, 25) * grid;
+      apple.y = getRandomInt(0, 25) * grid;
+      if(getRandomInt(0, 25)<5){
+        stoneactive=1;
+      }
+      while(apple.x===stone.x){
+          apple.x = getRandomInt(0, 25) * grid;
+      }
+    }
+    
+    // snake ate stone
+    if (cell.x === stone.x && cell.y === stone.y && stoneactive>0) {
+      basespeed=10;
+      speed=basespeed;
+      setTimeout(function() { basespeed = 15; speed=15;}, 5000);
+      stone.x = getRandomInt(0, 25) * grid;
+      stone.y = getRandomInt(0, 25) * grid;
+      stoneactive=0;
+    }
+
+    // check collision with all cells after this one (modified bubble sort)
+    for (var i = index + 1; i < snake.cells.length; i++) {
+      
+      // snake occupies same space as a body part. reset game
+      if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
+        resetgame()
+
+      }
+
+    }
+
+
+  });
+  document.getElementById("score").innerHTML=score;
+  document.getElementById("bestscore").innerHTML=bestscore;
+}
+
+
+// listen to keyboard events to move the snake
+document.addEventListener('keydown', function(e) {
+  // prevent snake from backtracking on itself by checking that it's 
+  // not already moving on the same axis (pressing left while moving
+  // left won't do anything, and pressing right while moving left
+  // shouldn't let you collide with your own body)
+  
+  // left arrow key
+  if (e.which === 37 && snake.dx === 0) {
+    snake.dx = -grid;
+    snake.dy = 0;
+  }
+  // up arrow key
+  else if (e.which === 38 && snake.dy === 0) {
+    snake.dy = -grid;
+    snake.dx = 0;
+  }
+  // right arrow key
+  else if (e.which === 39 && snake.dx === 0) {
+    snake.dx = grid;
+    snake.dy = 0;
+  }
+  // down arrow key
+  else if (e.which === 40 && snake.dy === 0) {
+    snake.dy = grid;
+    snake.dx = 0;
+  } 
+  //speed change
+  else if (e.which === 37 && snake.dx !== 0) {
+    speed=20;
+  }
+  else if (e.which === 38 && snake.dy !== 0) {
+    speed=20;
+  }
+  else if (e.which === 39 && snake.dx !== 0) {
+    speed=20;
+  }
+  else if (e.which === 40 && snake.dy !== 0) {
+    speed=20;
+  }
+});
+document.addEventListener('keyup', function (e) {
+  if (e.which === 37 ) {
+    speed=basespeed;
+  }
+  else if (e.which === 38 ) {
+    speed=basespeed;
+  }
+  else if (e.which === 39) {
+    speed=basespeed;
+  }
+  else if (e.which === 40 ) {
+    speed=basespeed;
+  }
+});
+
+//Stop arrow keys from changing gamemodes
+var keys = {};
+document.addEventListener("keydown",
+   function(e) {
+      keys[e.keyCode] = true;
+      switch (e.keyCode) {
+         case 37:
+         case 39:
+         case 38:
+         case 40: // Arrow keys
+         case 32:
+            e.preventDefault();
+            break; // Space
+         default:
+            break; // do not block other keys
+      }
+   },
+   false);
+document.addEventListener('keyup',
+   function(e) {
+      keys[e.keyCode] = false;
+   },
+   false);
+// start the game
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
