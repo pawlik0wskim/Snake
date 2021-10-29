@@ -60,6 +60,12 @@
     color:gray;
     margin-top: 80px;
   }
+  html {
+  transform-origin: left top;
+  overflow-x: hidden;
+  top: 100%;
+  left: 0;
+  }
   @media only screen and (max-width: 620px) {
   /* For mobile phones: */
   .scores, .main , .modechange{
@@ -72,7 +78,8 @@
 <body>
 <div class="title">Snake</div>
 <div style="overflow:auto"><div class="scores"><h1> Score: <span id="score"></span></h1>
-<h3> Best score:  <span id="bestscore"></span></h3></div>
+<h3> Best score:  <span id="bestscore"></span></h3>
+</div>
 <div class="main"><canvas width="400" height="400" id="game"></canvas></div>
 <div class="modechange">
   <h1> Gamemode</h1><br>
@@ -315,7 +322,32 @@ document.addEventListener('keyup', function (e) {
     speed=basespeed;
   }
 });
+//Gyroscope 
+let gyroscope = new Gyroscope({frequency: 60});
 
+gyroscope.addEventListener('reading', e => {
+  //left
+    if (gyroscope.x>-1 &&gyroscope.x<1 &&gyroscope.y<-2 && snake.dx === 0) {
+    snake.dx = -grid;
+    snake.dy = 0;
+  }
+  // up
+  else if (gyroscope.y>-1 &&gyroscope.y<1 &&gyroscope.x<-2 && snake.dy === 0) {
+    snake.dy = -grid;
+    snake.dx = 0;
+  }
+  // right
+  else if (gyroscope.x>-1 &&gyroscope.x<1 &&gyroscope.y>2 && snake.dx === 0) {
+    snake.dx = grid;
+    snake.dy = 0;
+  }
+  // down
+  else if (gyroscope.y>-1 &&gyroscope.y<1 &&gyroscope.x>2 && snake.dy === 0) {
+    snake.dy = grid;
+    snake.dx = 0;
+  } 
+});
+gyroscope.start();
 //Stop arrow keys from changing gamemodes
 var keys = {};
 document.addEventListener("keydown",
